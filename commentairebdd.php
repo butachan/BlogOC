@@ -11,6 +11,8 @@
 		<p> salut <?php echo htmlspecialchars($_POST['pseudo']); ?> </br>
 		 Votre message : <?php echo htmlspecialchars($_POST['newComment']).'</br> </p>'; 
 		 $num = $_GET['id_billet'];
+		 $pseudo = htmlspecialchars($_POST['pseudo']);
+		 $comment = htmlspecialchars($_POST['newComment']);
 		 echo $num;
 		 try
 		{
@@ -23,19 +25,18 @@
 		
 		//verifier si une entree a déjà été validé avant
 		$valide= TRUE;
-		$verifiedoublon = $bdd->query('SELECT * FROM commentaires');
-		while ($donneesbdd=$verifiedoublon->fetch())
-		{
-			echo $donneesbdd['auteur'];
-			if ($donneesbdd['commentaire']==htmlspecialchars($_POST['newComment'])):
-				echo 'votre message est déjà enregistré, veuillez le changer';
-				$valide = FALSE;
-				break;
-			else: 
-				$valide=TRUE;
-			endif;
-		}
 		$verifiedoublon->closeCursor();
+		//deuxieme verification
+		$verification =$bdd->prepare('SELECT * FROM commentaires WHERE auteur =? ');
+		$verification -> execute([$pseudo]);
+		$doublon = $verification->fetch();
+		if ($doublon){
+			echo 'commentaire ou pseudo déjà existant';
+			$valide= FALSE;
+		} else
+		{
+			echo 'commentaire approuvé';
+		}
 		if($valide){
 			echo 'votre commentaire est validé';
 			$date = date("Y-m-d:i:s");
@@ -46,8 +47,9 @@
 				'auteur' => $_POST['pseudo'],
 				'commentaire' => htmlspecialchars($_POST['newComment']),
 				 'date_commentaire' => $date));
+			$requete->closeCursor();
 		}
-		$requete->closeCursor();
+		
 		?>
 		
 		<a href="commentaires.php?id=<?php echo $num; ?>"> retour à la liste des commentaires </a>
